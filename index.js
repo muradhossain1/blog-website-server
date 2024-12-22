@@ -28,10 +28,16 @@ async function run() {
 
         const blogsCollection = client.db('blogsDB').collection('blogs')
 
+        //add blogs
         app.post('/blogs', async (req, res) => {
             const newblogs = req.body;
             const result = await blogsCollection.insertOne(newblogs)
             res.send(result)
+        });
+
+        app.get('/all-blogs', async(req, res) => {
+            const result = await blogsCollection.find().toArray();
+            res.send(result);
         })
 
 
