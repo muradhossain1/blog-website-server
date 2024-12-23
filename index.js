@@ -58,6 +58,11 @@ async function run() {
             res.send(result);
         })
 
+        //get recent blogs section data limited
+        app.get('/recent-blogs', async(req, res) => {
+            const result = await blogsCollection.find().limit(6).toArray();
+            res.send(result);
+        })
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
