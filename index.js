@@ -108,12 +108,22 @@ async function run() {
             res.send(result)
         });
 
+        // query spacific user
         app.get('/wishlist', async (req, res) => {
             const email = req.query.email;
-            const query = {email: email}
+            const BlogId = req.query.blog_id;
+            const query = {email: email, BlogId: BlogId}
             const result = await wishlistCollection.find(query).toArray()
             res.send(result)
         });
+
+        // remove wishlist
+        app.delete('/wishlist/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await wishlistCollection.deleteOne(query);
+            res.send(result);
+        })
 
 
         // await client.db("admin").command({ ping: 1 });
