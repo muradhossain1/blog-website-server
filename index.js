@@ -28,6 +28,7 @@ async function run() {
 
         const blogsCollection = client.db('blogsDB').collection('blogs')
         const commentsCollection = client.db('blogsDB').collection('comments')
+        const wishlistCollection = client.db('blogsDB').collection('wishlists')
 
         //add blogs
         app.post('/blogs', async (req, res) => {
@@ -92,6 +93,28 @@ async function run() {
             const result = await blogsCollection.updateOne(filter, updatedDoc, options)
             res.send(result);
         })
+
+        // featured
+        app.get('/featured', async (req, res) => {
+            // const sort = [{ $sort: { longDescript: -1}}]
+            const result = await blogsCollection.find().toArray();
+            res.send(result);
+        })
+
+        // wishlist
+        app.post('/wishlists', async (req, res) => {
+            const newWishlist = req.body;
+            const result = await wishlistCollection.insertOne(newWishlist)
+            res.send(result)
+        });
+
+        app.get('/wishlist', async (req, res) => {
+            const email = req.query.email;
+            const query = {email: email}
+            const result = await wishlistCollection.find(query).toArray()
+            res.send(result)
+        });
+
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
