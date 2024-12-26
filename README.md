@@ -3,7 +3,7 @@
 ## Purpose
 The Blog Website Development project aims to create a modern, user-friendly, and responsive blog platform. It provides users with the ability to view, comment on, and interact with blog posts, while offering admins the ability to manage content. Built using React for the front-end and Firebase for back-end services, the site delivers real-time features like authentication, dynamic content management, and real-time commenting.
 
-## Blog Website Live Site: "https://my-assignment-10-4d054.web.app"
+## Blog Website Live Site: "https://my-assignment-11.vercel.app"
 
 ## Key Features
 - User Authentication : Users can sign up, log in, and manage their profiles using Firebase Authentication.
