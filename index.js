@@ -2,12 +2,21 @@ const express = require('express')
 const cors = require('cors')
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 
 const port = process.env.PORT || 5000
 const app = express();
 
-app.use(cors())
+const corsOption = {
+    origin: ['http://localhost:5173'],
+    credentials: true,
+    optionalSuccessStatus: 200,
+}
+
+app.use(cors(corsOption))
 app.use(express.json())
+app.use(cookieParser())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.vy1ux.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -20,6 +29,22 @@ const client = new MongoClient(uri, {
     }
 });
 
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token
+    console.log(token)
+    if (!token) {
+        return res.status(401).send({ message: 'Unauthorized access' })
+    }
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'Unauthorized access' })
+        }
+        req.user = decoded;
+    })
+
+    next()
+}
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -30,8 +55,29 @@ async function run() {
         const commentsCollection = client.db('blogsDB').collection('comments')
         const wishlistCollection = client.db('blogsDB').collection('wishlists')
 
+        //generate jwt
+        app.post('/jwt', async (req, res) => {
+            const email = req.body;
+            const token = jwt.sign(email, process.env.JWT_SECRET, { expiresIn: '1d' })
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+            }).send({ success: true })
+        })
+
+        // logout cookie token
+        app.get('/logout', async (req, res) => {
+            res.clearCookie('token', {
+                maxAge: 0,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+            }).send({ success: true })
+        })
+
         //add blogs
-        app.post('/blogs', async (req, res) => {
+        app.post('/blogs',verifyToken, async (req, res) => {
             const newblogs = req.body;
             const result = await blogsCollection.insertOne(newblogs)
             res.send(result)
@@ -67,7 +113,7 @@ async function run() {
         })
 
         // get a details single data by id from db 
-        app.get('/blog/:id', async (req, res) => {
+        app.get('/blog/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await blogsCollection.findOne(query);
@@ -83,7 +129,7 @@ async function run() {
         });
 
         // update blog
-        app.patch('/updates/:id', async (req, res) => {
+        app.patch('/updates/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
@@ -109,16 +155,20 @@ async function run() {
         });
 
         // query spacific user
-        app.get('/wishlist', async (req, res) => {
+        app.get('/wishlist', verifyToken, async (req, res) => {
             const email = req.query.email;
-            const BlogId = req.query.blog_id;
-            const query = {email: email, BlogId: BlogId}
+
+            const decodedEmail = req.user.email;
+            if (decodedEmail !== email) {
+                return res.status(401).send({ message: 'Unauthorized access' })
+            }
+            const query = { email: email }
             const result = await wishlistCollection.find(query).toArray()
             res.send(result)
         });
 
         // remove wishlist
-        app.delete('/wishlist/:id', async (req, res) => {
+        app.delete('/wishlist/:id',verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await wishlistCollection.deleteOne(query);
