@@ -130,6 +130,18 @@ async function run() {
             const result = await commentsCollection.insertOne(newComment)
             res.send(result)
         });
+        app.get('/comments', async(req, res) => {
+            const result = await commentsCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.get('/comment/:id', async (req, res) => {
+            const blogId = req.params.id;
+            console.log(blogId)
+            const query = { blog_Id: blogId};
+            const result = await commentsCollection.find(query).toArray();
+            res.send(result)
+        })
 
         // update blog
         app.patch('/updates/:id', verifyToken, async (req, res) => {
@@ -144,10 +156,10 @@ async function run() {
         })
 
         // featured
-        app.get('/featured', async (req, res) => {
-            // const sort = [{ $sort: { longDescript: -1}}]
-            const result = await blogsCollection.find().toArray();
-            res.send(result);
+        app.get('/featured', async (req, res) => { 
+            const result = await blogsCollection.find().limit(10).toArray();
+            const sortData = result.sort((a, b) => b.longDescript.length - a.longDescript.length)
+            res.send(sortData);
         })
 
         // wishlist
