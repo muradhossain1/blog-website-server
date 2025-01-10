@@ -111,7 +111,7 @@ async function run() {
 
         //get recent blogs section data limited
         app.get('/recent-blogs', async (req, res) => {
-            const result = await blogsCollection.find().limit(6).toArray();
+            const result = await blogsCollection.find().limit(8).toArray();
             res.send(result);
         })
 
